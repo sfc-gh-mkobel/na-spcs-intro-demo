@@ -1,0 +1,15 @@
+manifest_version: 1
+artifacts:
+     setup_script: setup_script.sql
+     readme: README.md
+     container_services:
+          images:
+          - /na_spcs_tutorial_image_database/na_spcs_tutorial_image_schema/na_spcs_tutorial_image_repo/my_echo_service_image:tutorial
+     default_web_endpoint:
+          service: core.echo_service
+          endpoint: echoendpoint
+privileges:
+- BIND SERVICE ENDPOINT:
+     description: "A service that can respond to requests from public endpoints."
+- CREATE COMPUTE POOL:
+     description: "Permission to create compute pools for running services"

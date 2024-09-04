@@ -1,0 +1,16 @@
+definition_version: 1
+native_app:
+   name: hello_snowflake
+   artifacts:
+      - src: app/*
+        dest: ./
+      - service/echo_spec.yaml
+   package:
+      name: na_spcs_tutorial_pkg
+      role: tutorial_role
+      warehouse: tutorial_warehouse
+   application:
+      name: na_spcs_tutorial_app
+      debug: false
+      role: tutorial_role
+      warehouse: tutorial_warehouse
