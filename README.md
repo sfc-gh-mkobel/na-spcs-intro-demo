@@ -1,17 +1,90 @@
-## Introduction
+## Step 1 Create Objects
 
-This is the basic project template for a Snowflake Native App project. It contains minimal code meant to help you set up your first application object in your account quickly.
+```sql
+--------------------------------------- STEP 1 -----------------------------------------
 
-### Project Structure
-| File Name | Purpose |
-| --------- | ------- |
-| README.md | The current file you are looking at, meant to guide you through a Snowflake Native App project. |
-| app/setup_script.sql | Contains SQL statements that are run when an account installs or upgrades a Snowflake Native App. |
-| app/manifest.yml | Defines properties required by the application package. Find more details at the [Manifest Documentation.](https://docs.snowflake.com/en/developer-guide/native-apps/creating-manifest)
-| app/README.md | Exposed to the account installing the Snowflake Native App with details on what it does and how to use it. |
-| snowflake.yml | Used by the Snowflake CLI tool to discover your project's code and interact with your Snowflake account with all relevant prvileges and grants. |
+USE ROLE ACCOUNTADMIN;
+CREATE ROLE tutorial_role;
+GRANT ROLE tutorial_role TO USER MENY;
 
-### Adding a snowflake.local.yml file
-Though your project directory already comes with a `snowflake.yml` file, an individual developer can choose to customize the behavior of the Snowflake CLI by providing local overrides to `snowflake.yml`, such as a new role to test out your own application package. This is where you can use `snowflake.local.yml`, which is not a version-controlled file.
+GRANT CREATE INTEGRATION ON ACCOUNT TO ROLE tutorial_role;
+GRANT CREATE WAREHOUSE ON ACCOUNT TO ROLE tutorial_role;
+GRANT CREATE DATABASE ON ACCOUNT TO ROLE tutorial_role;
+GRANT CREATE APPLICATION PACKAGE ON ACCOUNT TO ROLE tutorial_role;
+GRANT CREATE APPLICATION ON ACCOUNT TO ROLE tutorial_role;
+GRANT CREATE COMPUTE POOL ON ACCOUNT TO ROLE tutorial_role WITH GRANT OPTION;
+GRANT BIND SERVICE ENDPOINT ON ACCOUNT TO ROLE tutorial_role WITH GRANT OPTION;
 
-For more information, please refer to the Snowflake Documentation on installing and using Snowflake CLI to create a Snowflake Native App. 
+
+USE ROLE tutorial_role;
+CREATE OR REPLACE WAREHOUSE tutorial_warehouse WITH
+  WAREHOUSE_SIZE = 'X-SMALL'
+  AUTO_SUSPEND = 180
+  AUTO_RESUME = true
+  INITIALLY_SUSPENDED = false;
+
+USE WAREHOUSE tutorial_warehouse;
+
+CREATE DATABASE na_spcs_tutorial_image_database;
+CREATE SCHEMA na_spcs_tutorial_image_schema;
+CREATE IMAGE REPOSITORY na_spcs_tutorial_image_repo;
+
+USE DATABASE na_spcs_tutorial_image_database;
+USE SCHEMA na_spcs_tutorial_image_schema;
+
+SHOW IMAGE REPOSITORIES IN SCHEMA;
+```
+
+## Step 2 SPCS image and spec file
+- Update IMAGE_REGISTRY in file service_config.env
+- Open terimnal and run:
+- make build_docker 
+- make tag_docker
+
+
+## Step 3 Deploy the application
+Run command
+```
+snow app run --role tutorial_role
+```
+## Step 4 Create and test the app
+
+```sql
+------------------------------------- STEP 2 Create and test the app ------------------------------------------------------
+
+SHOW APPLICATION PACKAGES;
+SHOW APPLICATIONS;
+
+
+--Grant the CREATE COMPUTE POOL privilege to the app by running the following:
+grant create compute pool on account to application na_spcs_tutorial_app;
+grant bind service endpoint on account to application na_spcs_tutorial_app;
+
+--Run the app_public.start_app procedure we defined in the setup_script.sql file.
+CALL na_spcs_tutorial_app.app_public.start_app();
+
+
+
+--To verify that the service has been created and healthy, run the following command:
+--This command calls the app_public.service_status procedure you defined in the setup script:
+--When this procedure returns READY, you proceed to the next step.
+CALL na_spcs_tutorial_app.app_public.service_status();
+
+-- Get service URL
+CALL na_spcs_tutorial_app.app_public.app_url();
+
+--Confirm the function was created by running the following:
+SHOW FUNCTIONS LIKE '%my_echo_udf%' IN APPLICATION na_spcs_tutorial_app;
+
+
+--To call the service function to send a request to the service and verify the response, run the following command:
+SELECT na_spcs_tutorial_app.core.my_echo_udf('hello');
+
+
+-- SPCS MONITORING
+
+SHOW services;
+SHOW COMPUTE POOLS; -- this one is working!
+show endpoints in service core.echo_service;
+SELECT SYSTEM$GET_SERVICE_STATUS('core.echo_service');
+```
