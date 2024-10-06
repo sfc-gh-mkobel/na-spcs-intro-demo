@@ -40,6 +40,11 @@ SHOW IMAGE REPOSITORIES IN SCHEMA;
 - Open terimnal and run:
 - make build_docker 
 - make tag_docker
+- make docker_login
+- make push_docker
+
+Or run 
+- make build_and_push_docker
 
 
 ## Step 3 Deploy the application
