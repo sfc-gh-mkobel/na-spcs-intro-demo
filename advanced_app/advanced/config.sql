@@ -1,6 +1,5 @@
 CREATE OR ALTER VERSIONED SCHEMA config;
 GRANT USAGE ON SCHEMA config TO APPLICATION ROLE app_admin;
-
 -- CALLBACKS
 CREATE OR REPLACE PROCEDURE config.reference_callback(ref_name STRING, operation STRING, ref_or_alias STRING)
  RETURNS STRING
@@ -13,8 +12,7 @@ CREATE OR REPLACE PROCEDURE config.reference_callback(ref_name STRING, operation
         CASE (operation)
             WHEN 'ADD' THEN
                 SELECT system$set_reference(:ref_name, :ref_or_alias);
-                -- When references are added, see if we can start services that aren't started already
-                CALL config.create_all_services() INTO :retstr;
+                retstr := 'Reference added';
             WHEN 'REMOVE' THEN
                 SELECT system$remove_reference(:ref_name);
                 retstr := 'Reference removed';
@@ -71,6 +69,7 @@ CREATE OR REPLACE PROCEDURE config.reference_callback(ref_name STRING, operation
     DECLARE
         retstr STRING;
     BEGIN
+        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: grant_callback: Start grant_callback');
         IF (ARRAY_CONTAINS('CREATE COMPUTE POOL'::VARIANT, :privs)) THEN
             SYSTEM$LOG_INFO('NA_SPCS_PYTHON: grant_callback: creating all compute pools');
             CALL config.create_compute_pool() INTO :retstr;
@@ -81,13 +80,9 @@ CREATE OR REPLACE PROCEDURE config.reference_callback(ref_name STRING, operation
             CALL config.create_warehouse_nawh() INTO :retstr;
             SYSTEM$LOG_INFO('NA_SPCS_PYTHON: grant_callback: warehouses: ' || :retstr);
         END IF;
-        -- Whenever grants are added, see if we can start services that aren't started already
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: grant_callback: creating all services');
-        CALL config.create_all_services() INTO :retstr;
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: grant_callback: services: ' || :retstr);
         RETURN retstr;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: grant_callback: EXCEPTION: ' || SQLERRM);
+        SYSTEM$LOG_FATAL('NA_SPCS_PYTHON: grant_callback: EXCEPTION: ' || SQLERRM);
     END;
     $$;
     GRANT USAGE ON PROCEDURE config.grant_callback(ARRAY) TO APPLICATION ROLE app_admin;
@@ -112,7 +107,7 @@ CREATE OR REPLACE PROCEDURE config.reference_callback(ref_name STRING, operation
         SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_warehouse_nawh: warehouse ' || name || ' created');
         RETURN true;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_warehouse_nawh: ERROR: ' || SQLERRM);
+        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_warehouse_nawh: EXCEPTION: ' || SQLERRM);
         RETURN false;
     END
     $$;
@@ -129,6 +124,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
         name STRING DEFAULT config.app_prefix('pool');
         b BOOLEAN;
     BEGIN
+        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_compute_pool: starting');
         SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_compute_pool: creating compute pool ' || name);
         CALL config.permissions_and_references(ARRAY_CONSTRUCT('CREATE COMPUTE POOL'),
                                             ARRAY_CONSTRUCT()) INTO :b;
@@ -137,13 +133,14 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
             RETURN false;
         END IF;
         CREATE COMPUTE POOL IF NOT EXISTS Identifier(:name)
-            MIN_NODES = 1 MAX_NODES = 1
+            MIN_NODES = 1 
+            MAX_NODES = 1
             INSTANCE_FAMILY = CPU_X64_XS
             AUTO_RESUME = TRUE;
         SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_compute_pool: compute pool ' || name || ' created');
         RETURN true;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_compute_pool: ERROR: ' || SQLERRM);
+        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_compute_pool: EXCEPTION: ' || SQLERRM);
         RETURN false;
     END
     $$;
@@ -220,7 +217,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
         -- ;
         LET q STRING := 'CREATE SERVICE IF NOT EXISTS app_public.backend
             IN COMPUTE POOL Identifier(''' || poolname || ''')
-            FROM SPECIFICATION_FILE=''service/echo_spec.yaml''
+            FROM SPECIFICATION_FILE=''service_advanced/echo_spec.yaml''
             QUERY_WAREHOUSE=''' || whname || '''';
         SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_service_backend: Command: ' || q);
         EXECUTE IMMEDIATE q;
@@ -232,7 +229,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
         SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_service_backend: finished!');
         RETURN true;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: create_service_backend: ERROR: ' || SQLERRM);
+        SYSTEM$LOG_FATAL('NA_SPCS_PYTHON: create_service_backend: EXCEPTION: ' || SQLERRM);
         RETURN false;
     END
     $$;
@@ -253,7 +250,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
         SYSTEM$LOG_INFO('NA_SPCS_PYTHON: service_suspended: Service suspended? ' || b);
         RETURN b;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: service_suspended: ERROR: ' || SQLERRM);
+        SYSTEM$LOG_FATAL('NA_SPCS_PYTHON: service_suspended: EXCEPTION: ' || SQLERRM);
         RETURN false;
     END
     $$;
@@ -273,7 +270,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
         SYSTEM$LOG_INFO('NA_SPCS_PYTHON: service_exists: Did not find service');
         RETURN false;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: service_exists: ERROR: ' || SQLERRM);
+        SYSTEM$LOG_FATAL('NA_SPCS_PYTHON: service_exists: EXCEPTION: ' || SQLERRM);
         RETURN false;
     END
     $$;
@@ -288,7 +285,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
         ALTER SERVICE IF EXISTS app_public.backend RESUME;
         RETURN true;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: resume_service_backend: ERROR: ' || SQLERRM);
+        SYSTEM$LOG_FATAL('NA_SPCS_PYTHON: resume_service_backend: EXCEPTION: ' || SQLERRM);
         RETURN false;
     END
     $$;
@@ -304,7 +301,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
         ALTER SERVICE IF EXISTS app_public.backend SUSPEND;
         RETURN true;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: suspend_service_backend: ERROR: ' || SQLERRM);
+        SYSTEM$LOG_FATAL('NA_SPCS_PYTHON: suspend_service_backend: EXCEPTION: ' || SQLERRM);
         RETURN false;
     END
     $$;
@@ -334,7 +331,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
 
             -- Alter the service
             -- ALTER SERVICE app_public.backend FROM SPECIFICATION_FILE='/backend.yaml';
-            EXECUTE IMMEDIATE 'ALTER SERVICE app_public.backend FROM SPECIFICATION_FILE=''service/echo_spec.yaml''';
+            EXECUTE IMMEDIATE 'ALTER SERVICE app_public.backend FROM SPECIFICATION_FILE=''service_advanced/echo_spec.yaml''';
 
             -- ALTER SERVICE app_public.backend SET
             --     QUERY_WAREHOUSE=Identifier(:whname)
@@ -361,7 +358,7 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
             END IF;
         END IF;
     EXCEPTION WHEN OTHER THEN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: upgrade_service_backend: ERROR: ' || SQLERRM);
+        SYSTEM$LOG_FATAL('NA_SPCS_PYTHON: upgrade_service_backend: EXCEPTION: ' || SQLERRM);
         RAISE;
     END
     $$;
@@ -369,23 +366,38 @@ CREATE OR REPLACE PROCEDURE config.create_compute_pool()
 
 
     CREATE OR REPLACE PROCEDURE config.version_initializer()
-    RETURNS boolean
-    LANGUAGE SQL
-    AS $$
-    DECLARE
-        b BOOLEAN;
-    BEGIN
-        SYSTEM$LOG_INFO('NA_SPCS_PYTHON: version_initializer: initializing');
-        
-        CALL config.upgrade_service_backend() INTO :b;
-        IF (NOT b) THEN
-            RETURN false;
-        END IF;
+        RETURNS boolean
+        LANGUAGE SQL
+        AS $$
+        DECLARE
+            isserviceexist BOOLEAN;
+            return_create_service BOOLEAN;
+            ret_upgrade BOOLEAN;
+        BEGIN
+            SYSTEM$LOG_INFO('NA_SPCS_PYTHON: version_initializer: Start initializing');
+            SYSTEM$LOG_INFO('NA_SPCS_PYTHON: version_initializer: Going to check if service exist');
+            CALL config.service_exists('APP_PUBLIC.BACKEND') INTO :isserviceexist;
+            SYSTEM$LOG_INFO('NA_SPCS_PYTHON: version_initializer: is service exist: ' || :isserviceexist);
 
-        RETURN true;
-    EXCEPTION WHEN OTHER THEN
-        RAISE;
-    END;
-    $$;
-
+            IF (NOT isserviceexist) THEN
+                SYSTEM$LOG_INFO('NA_SPCS_PYTHON: version_initializer: Since service doesnt exist going to create all services');
+                CALL config.create_all_services() INTO :return_create_service;
+                SYSTEM$LOG_INFO('NA_SPCS_PYTHON: version_initializer: services: ' || :return_create_service);
+                IF (NOT return_create_service) THEN
+                    RETURN false;
+                END IF;
+            ELSE
+                SYSTEM$LOG_INFO('NA_SPCS_PYTHON: version_initializer: Since service exist going to upgrade all services');
+                CALL config.upgrade_service_backend() INTO :ret_upgrade;
+                IF (NOT ret_upgrade) THEN
+                    RETURN false;
+                END IF;
+            END IF;
+            RETURN true;
+            EXCEPTION WHEN OTHER THEN
+                SYSTEM$LOG_FATAL('NA_SPCS_PYTHON: version_initializer: EXCEPTION: ' || SQLERRM);
+                RAISE;
+        END;
+        $$;
+    GRANT USAGE ON PROCEDURE config.version_initializer() TO APPLICATION ROLE app_admin;
 

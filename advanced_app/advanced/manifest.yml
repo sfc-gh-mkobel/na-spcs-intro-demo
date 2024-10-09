@@ -6,7 +6,7 @@ artifacts:
           images:
           - /na_spcs_tutorial_image_database/na_spcs_tutorial_image_schema/na_spcs_tutorial_image_repo/my_echo_service_image:tutorial
      default_web_endpoint:
-          service: core.echo_service
+          service: APP_PUBLIC.BACKEND
           endpoint: echoendpoint
 privileges:
 - BIND SERVICE ENDPOINT:
@@ -22,3 +22,14 @@ configuration:
 
 lifecycle_callbacks:
   version_initializer: config.version_initializer
+
+
+references:
+  - ORDERS_TABLE:
+      label: "Orders table"
+      description: "Orders table in TPC-H samples"
+      privileges:
+        - SELECT
+      object_type: VIEW
+      multi_valued: false
+      register_callback: config.reference_callback

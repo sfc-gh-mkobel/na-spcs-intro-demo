@@ -17,15 +17,9 @@ CREATE OR REPLACE PROCEDURE support.get_service_status(service VARCHAR)
 AS $$
 DECLARE
     res VARCHAR;
-    okay BOOLEAN;
 BEGIN
-    SELECT app_internal.debug_flag('GET_SERVICE_STATUS') INTO :okay;
-    IF (:okay) THEN
-        SELECT SYSTEM$GET_SERVICE_status(:service) INTO res;
+    SELECT SYSTEM$GET_SERVICE_status(:service) INTO res;
         RETURN res;
-    ELSE
-        RETURN 'Not authorized.';
-    END IF;
 END;
 $$;
 GRANT USAGE ON PROCEDURE support.get_service_status(VARCHAR) TO APPLICATION ROLE app_admin;
@@ -36,15 +30,38 @@ CREATE OR REPLACE PROCEDURE support.get_service_logs(service VARCHAR, instance I
 AS $$
 DECLARE
     res VARCHAR;
-    okay BOOLEAN;
 BEGIN
-    SELECT app_internal.debug_flag('GET_SERVICE_LOGS') INTO :okay;
-    IF (:okay) THEN
-        SELECT SYSTEM$GET_SERVICE_LOGS(:service, :instance, :container, :num_lines) INTO res;
-        RETURN res;
-    ELSE
-        RETURN 'Not authorized.';
-    END IF;
+    SELECT SYSTEM$GET_SERVICE_LOGS(:service, :instance, :container, :num_lines) INTO res;
+    RETURN res;
+END;
+$$;
+GRANT USAGE ON PROCEDURE support.get_service_logs(VARCHAR, INT, VARCHAR, INT) TO APPLICATION ROLE app_admin;
+
+CREATE OR REPLACE PROCEDURE support.app_url()
+    RETURNS string
+    LANGUAGE sql
+    AS
+$$
+DECLARE
+    ingress_url VARCHAR;
+BEGIN
+    SHOW ENDPOINTS IN SERVICE app_public.backend;
+    SELECT "ingress_url" INTO :ingress_url FROM TABLE (RESULT_SCAN (LAST_QUERY_ID())) LIMIT 1;
+    RETURN ingress_url;
+END
+$$;
+GRANT USAGE ON PROCEDURE support.app_url() TO APPLICATION ROLE app_user;
+
+
+CREATE OR REPLACE PROCEDURE support.get_service_logs(service VARCHAR, instance INT, container VARCHAR, num_lines INT)
+    RETURNS VARCHAR
+    LANGUAGE SQL
+AS $$
+DECLARE
+    res VARCHAR;
+BEGIN
+    SELECT SYSTEM$GET_SERVICE_LOGS(:service, :instance, :container, :num_lines) INTO res;
+    RETURN res;
 END;
 $$;
 GRANT USAGE ON PROCEDURE support.get_service_logs(VARCHAR, INT, VARCHAR, INT) TO APPLICATION ROLE app_admin;

@@ -4,7 +4,7 @@ native_app:
    artifacts:
       - src: advanced/*
         dest: ./
-      - ./service/echo_spec.yaml
+      - ./service_advanced/echo_spec.yaml
    package:
       name: na_spcs_advanced_pkg
       role: tutorial_role
