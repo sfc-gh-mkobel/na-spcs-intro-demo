@@ -88,9 +88,6 @@ CALL NA_SPCS_ADVANCED_APP.support.app_url();
 
 
 
-CALL na_spcs_tutorial_app.app_public.app_url();
-
-
 -- SPCS MONITORING
 USE ROLE ACCOUNTADMIN;
 USE warehouse BENCHMARK_WH;
