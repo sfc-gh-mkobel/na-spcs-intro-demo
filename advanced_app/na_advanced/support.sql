@@ -1,15 +1,10 @@
--- Break Glass Support Functions
-CREATE SCHEMA IF NOT EXISTS app_internal;
+--******************* WARNING *********************
+--not production-ready and hasn't undergone thorough testing. This code is intended solely for learning and demonstration purposes.
+--******************* WARNING *********************
+
 CREATE SCHEMA IF NOT EXISTS support;
 GRANT USAGE ON SCHEMA support TO APPLICATION ROLE app_admin;
 
--- CREATE OR REPLACE SECURE VIEW app_internal.feature_flags AS
---     SELECT * FROM shared_data.feature_flags_vw;
--- CREATE OR REPLACE FUNCTION app_internal.debug_flag(flag VARCHAR)
---     RETURNS BOOLEAN
--- AS $$
---     SELECT array_contains(flag::VARIANT, flags:debug::ARRAY) FROM app_internal.feature_flags
--- $$;
 
 CREATE OR REPLACE PROCEDURE support.get_service_status(service VARCHAR)
     RETURNS VARCHAR
@@ -50,18 +45,4 @@ BEGIN
     RETURN ingress_url;
 END
 $$;
-GRANT USAGE ON PROCEDURE support.app_url() TO APPLICATION ROLE app_user;
-
-
-CREATE OR REPLACE PROCEDURE support.get_service_logs(service VARCHAR, instance INT, container VARCHAR, num_lines INT)
-    RETURNS VARCHAR
-    LANGUAGE SQL
-AS $$
-DECLARE
-    res VARCHAR;
-BEGIN
-    SELECT SYSTEM$GET_SERVICE_LOGS(:service, :instance, :container, :num_lines) INTO res;
-    RETURN res;
-END;
-$$;
-GRANT USAGE ON PROCEDURE support.get_service_logs(VARCHAR, INT, VARCHAR, INT) TO APPLICATION ROLE app_admin;
+GRANT USAGE ON PROCEDURE support.app_url() TO APPLICATION ROLE app_admin;

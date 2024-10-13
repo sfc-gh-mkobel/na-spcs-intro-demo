@@ -2,7 +2,7 @@ definition_version: 1
 native_app:
    name: hello_snowflake
    artifacts:
-      - src: advanced/*
+      - src: na_advanced/*
         dest: ./
       - ./service_advanced/echo_spec.yaml
    package:

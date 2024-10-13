@@ -12,9 +12,9 @@ privileges:
 - BIND SERVICE ENDPOINT:
      description: "A service that can respond to requests from public endpoints."
 - CREATE COMPUTE POOL:
-     description: "Permission to create compute pools for running services"
+     description: "A Permission to create compute pools for running services"
 - CREATE WAREHOUSE:
-      description: "Allow application to create its own warehouse(s)"
+      description: "A Allow application to create its own warehouse(s)"
 
 configuration:
   grant_callback: config.grant_callback
@@ -22,7 +22,6 @@ configuration:
 
 lifecycle_callbacks:
   version_initializer: config.version_initializer
-
 
 references:
   - ORDERS_TABLE:

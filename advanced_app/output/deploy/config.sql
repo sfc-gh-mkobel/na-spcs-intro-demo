@@ -1,1 +1,1 @@
-/Users/mkobel/workspaces/na-spcs-intro-demo/advanced_app/advanced/config.sql
+/Users/mkobel/workspaces/na-spcs-intro-demo/advanced_app/na_advanced/config.sql

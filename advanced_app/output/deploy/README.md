@@ -1,1 +1,1 @@
-/Users/mkobel/workspaces/na-spcs-intro-demo/advanced_app/advanced/README.md
+/Users/mkobel/workspaces/na-spcs-intro-demo/advanced_app/na_advanced/README.md
