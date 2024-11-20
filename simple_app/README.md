@@ -53,17 +53,21 @@ USE SCHEMA na_spcs_tutorial_image_schema;
 
 
 SHOW IMAGES IN IMAGE REPOSITORY na_spcs_tutorial_image_repo;
+-- Copy repository_url value
 SHOW IMAGE REPOSITORIES IN SCHEMA na_spcs_tutorial_image_schema;
 ```
 
 ## Step 2 SPCS image and spec file
-- Update IMAGE_REGISTRY in file service_config.env
-- Open terimnal 
+- Open local file service_config.env and update IMAGE_REGISTRY parameter with repository_url value
+- Open teriminal 
 - Run cd simple_app
-- Run make all
-
+- Run comand: 
+```
+make all
+```
 
 ## Step 3 Create and Deploy the application Packages
+
 Run command
 ```
 make snow_create
@@ -73,6 +77,7 @@ make snow_create
 
 ```sql
 SHOW APPLICATION PACKAGES;
+-- Create na_spcs_tutorial_app App
 USE ROLE tutorial_role;
 DROP APPLICATION IF EXISTS na_spcs_tutorial_app CASCADE;
 CREATE APPLICATION na_spcs_tutorial_app FROM APPLICATION PACKAGE na_spcs_tutorial_pkg USING VERSION v1;
