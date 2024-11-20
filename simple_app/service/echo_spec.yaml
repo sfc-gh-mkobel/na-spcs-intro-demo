@@ -1,3 +1,4 @@
+# necessary information to configure and run your service.
 spec:
   container:
   - name: echo
@@ -12,3 +13,9 @@ spec:
   - name: echoendpoint
     port: 8000
     public: true
+
+
+# resources:   
+# secrets:    
+# endpoints:   
+# volumes: 

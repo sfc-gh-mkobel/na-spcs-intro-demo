@@ -1,3 +1,5 @@
+#The manifest file contains information that the application package requires 
+#to create and manage a Snowflake Native App.
 manifest_version: 1
 artifacts:
      setup_script: setup_script.sql
@@ -13,3 +15,7 @@ privileges:
      description: "A service that can respond to requests from public endpoints."
 - CREATE COMPUTE POOL:
      description: "Permission to create compute pools for running services"
+
+configuration:
+  grant_callback: app_public.start_app
+  log_level: INFO

@@ -15,12 +15,21 @@ help: ## This help.
 
 .DEFAULT_GOAL := help
 
+snow_create:
+	snow app version create V1 --role $(SS_ROLE)
+
+snow_validate:
+	snow app validate --role $(SS_ROLE)
+
+snow_app_run:
+	snow app run --version v1 --role $(SS_ROLE)
+
 run_docker_locally:
 	docker run -d -p8888:8888 $(SS_SERVICE_NAME)
 
 build_docker: ## Build the customized osrm backend container
 	export DOCKER_BUILDKIT=1
-	docker build --platform linux/amd64 -t $(SS_SERVICE_NAME) -f Dockerfile .
+	cd service && docker build --platform linux/amd64 -t $(SS_SERVICE_NAME) -f Dockerfile .
 
 tag_docker:
 	docker tag $(SS_SERVICE_NAME) $(IMAGE_REGISTRY)/$(SS_SERVICE_NAME)
@@ -38,17 +47,6 @@ get_repository_url:
 list_images:
 	snow spcs image-repository list-images $(SS_DB).$(SS_SCHEMA).$(SS_REPOSITORY_NAME) --role $(SS_ROLE)
 
-upload_yaml: ## upload yaml to stage $(SS_STAGE)
-	snowsql --config ~/.snowsql/sfseeurope-sfseeurope-eu-demo376-config -q " \
-		put file://./*.yaml @$(SS_DB).$(SS_SCHEMA).$(SS_STAGE) auto_compress=false overwrite=true; \
-		list @$(SS_DB).$(SS_SCHEMA).$(SS_STAGE); \
-		"
 ######################## COMPOSITE TARGETS ######################
 
-build_and_run_docker_locally: build_docker run_docker_locally
-
-build_and_push_docker: build_docker tag_docker docker_login push_docker
-
-tag_and_push_docker: tag_docker docker_login push_docker
-
-all: build_and_push_docker upload_yaml
+all: build_docker tag_docker docker_login push_docker

@@ -6,7 +6,7 @@ GRANT USAGE ON SCHEMA core TO APPLICATION ROLE app_user;
 CREATE OR ALTER VERSIONED SCHEMA app_public;
 GRANT USAGE ON SCHEMA app_public TO APPLICATION ROLE app_user;
 
-CREATE OR REPLACE PROCEDURE app_public.start_app()
+CREATE OR REPLACE PROCEDURE app_public.start_app(privs ARRAY)
    RETURNS string
    LANGUAGE sql
    AS
@@ -39,7 +39,7 @@ BEGIN
 END;
 $$;
 
-GRANT USAGE ON PROCEDURE app_public.start_app() TO APPLICATION ROLE app_user;
+GRANT USAGE ON PROCEDURE app_public.start_app(ARRAY) TO APPLICATION ROLE app_user;
 
 CREATE OR REPLACE PROCEDURE app_public.service_status()
 RETURNS VARCHAR
@@ -53,7 +53,7 @@ AS $$
          RETURN PARSE_JSON(:service_status)[0]['status']::VARCHAR;
    END;
 $$;
-
+GRANT USAGE ON PROCEDURE app_public.service_status() TO APPLICATION ROLE app_user;
 
 CREATE OR REPLACE PROCEDURE app_public.app_url()
     RETURNS string
@@ -70,5 +70,15 @@ END
 $$;
 GRANT USAGE ON PROCEDURE app_public.app_url() TO APPLICATION ROLE app_user;
 
-
-GRANT USAGE ON PROCEDURE app_public.service_status() TO APPLICATION ROLE app_user;
+CREATE OR REPLACE PROCEDURE app_public.get_service_logs()
+    RETURNS VARCHAR
+    LANGUAGE SQL
+AS $$
+DECLARE
+    res VARCHAR;
+BEGIN
+      SELECT SYSTEM$GET_SERVICE_LOGS('core.echo_service',0,'echo') INTO res;
+      RETURN res;
+END;
+$$;
+GRANT USAGE ON PROCEDURE app_public.get_service_logs() TO APPLICATION ROLE app_user;

@@ -83,7 +83,7 @@ def ui():
 
 
 def get_echo_response(input):
-    return f'{CHARACTER_NAME} said {input}'
+    return f'Bob said {input}'
 
 if __name__ == '__main__':
     app.run(host=SERVICE_HOST, port=SERVICE_PORT)
