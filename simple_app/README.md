@@ -63,7 +63,7 @@ SHOW IMAGE REPOSITORIES IN SCHEMA na_spcs_tutorial_image_schema;
 - Run make all
 
 
-## Step 3 Create and Deploy the application pck
+## Step 3 Create and Deploy the application Packages
 Run command
 ```
 make snow_create
@@ -80,23 +80,14 @@ SHOW APPLICATIONS;
 ```
 ## Step 4.1 Create and test the app
 
-From snowsight open Main left panel -> Data Products -> APPS and click on na_spcs_tutorial_app.
+From snowsight open Main left panel -> Data Products -> APPS and click on na_spcs_tutorial_app App.
 Grant application privileges.
 Activate the APP 
-
 ```sql
-------------------------------------- STEP 2 Create and test the app ------------------------------------------------------
+------------------------------------- STEP 4.1 Create and test the app ------------------------------------------------------
 
 SHOW APPLICATION PACKAGES;
 SHOW APPLICATIONS;
-
-
---Grant the CREATE COMPUTE POOL privilege to the app by running the following:
-grant create compute pool on account to application na_spcs_tutorial_app;
-grant bind service endpoint on account to application na_spcs_tutorial_app;
-
---Run the app_public.start_app procedure we defined in the setup_script.sql file.
-CALL na_spcs_tutorial_app.app_public.start_app();
 
 --To verify that the service has been created and healthy, run the following command:
 --This command calls the app_public.service_status procedure you defined in the setup script:
